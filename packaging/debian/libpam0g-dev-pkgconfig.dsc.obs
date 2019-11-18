@@ -1,0 +1,18 @@
+Format: 1.0
+Source: libpam0g-dev-pkgconfig
+Binary: libpam0g-dev-pkgconfig
+Architecture: any all
+Version: 1.5.0-etn1
+Maintainer:     42ity Developers <eatonipcopensource@eaton.com>
+Uploaders: Jim Klimov <EvgenyKlimov@eaton.com>
+Homepage: http://pam.sourceforge.net/
+Standards-Version: 3.9.1
+Build-Depends: debhelper (>= 9),
+    libpam0g-dev,
+    pkg-config,
+    dh-autoreconf
+Package-List:
+ libpam0g-dev-pkgconfig deb libdevel optional arch=any
+
+DEBTRANSFORM-TAR: libpam0g-dev-pkgconfig_1.5.0-etn1.tar.gz
+

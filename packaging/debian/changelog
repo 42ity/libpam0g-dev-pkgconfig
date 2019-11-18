@@ -1,0 +1,5 @@
+libpam0g-dev-pkgconfig (1.5.0-etn1) stable; urgency=medium
+  - Add pkgconfig support for libpam0g-dev in the target Debian-like distro
+
+ -- Jim Klimov <EvgenyKlimov@eaton.com>  Mon, 18 Nov  2019 09:57:35 +0100
+
