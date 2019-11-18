@@ -26,7 +26,7 @@ template_install_file:
 template_content_file:
 	mkdir -p $(CURDIR)/debian/tmp
 	sed -e"s/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g;s/@LIBPAM0G_VERSION@/$(UPSTREAM_VERSION)/g" \
-		$(CURDIR)/debian/libpam0g.pc.in > $(CURDIR)/debian/tmp/libpam0g.pc
+		$(CURDIR)/src/libpam0g.pc.in > $(CURDIR)/debian/tmp/libpam0g.pc
 
 override_dh_auto_install: template_install_file template_content_file
 
