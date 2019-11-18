@@ -1,0 +1,16 @@
+# Note: This file intentionally has a templated version string below
+Source: libpam0g-dev-pkgconfig
+Section:        libdevel
+Priority:       optional
+Maintainer:     42ity Developers <eatonipcopensource@eaton.com>
+Standards-Version: 4.0.1.0
+Build-Depends: debhelper (>= 9),
+    pkg-config,
+    libpam0g-dev,
+    dh-autoreconf
+
+Package: libpam0g-dev-pkgconfig
+Section: libdevel
+Architecture: any
+Depends: libpam0g-dev (= @LIBPAM0G_VERSION_PKG@), pkg-config
+Description: pkg-config metadata for OS-provided libpam0g-dev

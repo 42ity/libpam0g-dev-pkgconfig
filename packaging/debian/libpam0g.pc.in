@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib/@DEB_HOST_MULTIARCH@
+includedir=${prefix}/include
+
+Name: libpam0g
+Description: PAM library
+Version: @LIBPAM0G_VERSION@
+Libs: -L${libdir} -lpam -lcrypt
+Cflags: -I${includedir}

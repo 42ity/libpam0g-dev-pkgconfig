@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+DH_VERBOSE = 1
+
+DEB_HOST_MULTIARCH	:= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+UPSTREAM_VERSION        := $(shell dpkg -s libpam0g-dev | sed -n 's/^Version: *\([0-9]*:\)\?\([^~]*\)\(~.*\)\?-.*$$/\2/ p')
+UPSTREAM_VERSION_PKG    := $(shell dpkg -s libpam0g-dev | sed -n 's/^Version: *// p')
+
+# Change debian.control file in-place (and not as .in templates)
+# so dh_* tools have it when unpacking but use proper content when
+# making the package
+regen_control:
+	sed -e"s/@LIBPAM0G_VERSION_PKG@/$(UPSTREAM_VERSION_PKG)/g" \
+		-i $(CURDIR)/debian/control
+
+override_dh_auto_build: regen_control
+
+# Replace the packaging metadata and generate the add-on content
+template_install_file:
+	sed -e"s/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g" \
+		$(CURDIR)/debian/libpam0g-dev-pkgconfig.install.in > $(CURDIR)/debian/libpam0g-dev-pkgconfig.install
+
+template_content_file:
+	mkdir -p $(CURDIR)/debian/tmp
+	sed -e"s/@DEB_HOST_MULTIARCH@/$(DEB_HOST_MULTIARCH)/g;s/@LIBPAM0G_VERSION@/$(UPSTREAM_VERSION)/g" \
+		$(CURDIR)/debian/libpam0g.pc.in > $(CURDIR)/debian/tmp/libpam0g.pc
+
+override_dh_auto_install: template_install_file template_content_file
+
+# No autoconf in this source
+override_dh_configure:
+	@true
+
+%:
+	dh $@ --parallel
