@@ -2,7 +2,11 @@
 
 pipeline {
     agent {
-        label infra.getAgentLabels()
+        docker {
+            label 'docker-dev-1'
+            image infra.getDockerAgentImage()
+            args '--oom-score-adj=100 -v /etc/ssh/id_rsa_git-proxy-cache:/etc/ssh/id_rsa_git-proxy-cache:ro -v /etc/ssh/ssh_config:/etc/ssh/ssh_config:ro -v /etc/gitconfig:/etc/gitconfig:ro'
+        }
     }
     parameters {
         // Use DEFAULT_DEPLOY_BRANCH_PATTERN and DEFAULT_DEPLOY_JOB_NAME if
@@ -38,29 +42,57 @@ pipeline {
     triggers {
         pollSCM 'H/5 * * * *'
     }
+    options {
+        disableConcurrentBuilds()
+        // Jenkins community suggested that instead of a default checkout, we can do
+        // an explicit step for that. It is expected that either way Jenkins "should"
+        // record that a particular commit is being processed, but the explicit ways
+        // might work better. In either case it honors SCM settings like refrepo if
+        // set up in the Pipeline or MultiBranchPipeline job.
+        skipDefaultCheckout()
+    }
     stages {
-        stage ('deploy') {
-            steps {
-                script {
-                    def myDEPLOY_JOB_NAME = sh(returnStdout: true, script: """echo "${params["DEPLOY_JOB_NAME"]}" """).trim();
-                    def myDEPLOY_BRANCH_PATTERN = sh(returnStdout: true, script: """echo "${params["DEPLOY_BRANCH_PATTERN"]}" """).trim();
-                    def myDEPLOY_REPORT_RESULT = sh(returnStdout: true, script: """echo "${params["DEPLOY_REPORT_RESULT"]}" """).trim().toBoolean();
-                    echo "Original: DEPLOY_JOB_NAME : ${params["DEPLOY_JOB_NAME"]} DEPLOY_BRANCH_PATTERN : ${params["DEPLOY_BRANCH_PATTERN"]} DEPLOY_REPORT_RESULT : ${params["DEPLOY_REPORT_RESULT"]}"
-                    echo "Used:     myDEPLOY_JOB_NAME:${myDEPLOY_JOB_NAME} myDEPLOY_BRANCH_PATTERN:${myDEPLOY_BRANCH_PATTERN} myDEPLOY_REPORT_RESULT:${myDEPLOY_REPORT_RESULT}"
-                    if ( (myDEPLOY_JOB_NAME != "") && (myDEPLOY_BRANCH_PATTERN != "") ) {
-                        if ( env.BRANCH_NAME =~ myDEPLOY_BRANCH_PATTERN ) {
-                            def GIT_URL = sh(returnStdout: true, script: """git remote -v | egrep '^origin' | awk '{print \$2}' | head -1""").trim()
-                            def GIT_COMMIT = sh(returnStdout: true, script: 'git rev-parse --verify HEAD').trim()
-                            build job: "${myDEPLOY_JOB_NAME}", parameters: [
-                                string(name: 'DEPLOY_GIT_URL', value: "${GIT_URL}"),
-                                string(name: 'DEPLOY_GIT_BRANCH', value: env.BRANCH_NAME),
-                                string(name: 'DEPLOY_GIT_COMMIT', value: "${GIT_COMMIT}")
-                                ], quietPeriod: 0, wait: myDEPLOY_REPORT_RESULT, propagate: myDEPLOY_REPORT_RESULT
-                        } else {
-                            echo "Not deploying because branch '${env.BRANCH_NAME}' did not match filter '${myDEPLOY_BRANCH_PATTERN}'"
+        stage ('pre-clean') {
+                    steps {
+                        milestone ordinal: 20, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
+                        dir("tmp") {
+                            sh 'if [ -s Makefile ]; then make -k distclean || true ; fi'
+                            sh 'chmod -R u+w .'
+                            deleteDir()
                         }
-                    } else {
-                        echo "Not deploying because deploy-job parameters are not set"
+                        sh 'rm -f ccache.log cppcheck.xml'
+                    }
+        }
+        stage ('git') {
+                    steps {
+                        retry(3) {
+                            checkout scm
+                        }
+                        milestone ordinal: 30, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
+                        script {
+                            buildenv.setExtraEnvVariables()
+                            buildenv.listInstalledPackage()
+                            buildenv.checkDebianBuildDependencies()
+                        }
+                    }
+        }
+        stage ('Deploy') {
+            parallel {
+                stage ("Push to OBS") {
+                    when {
+                        anyOf {
+                            branch 'master'
+                            branch "release/*"
+                            branch "featureimage/*"
+                            branch 'FTY'
+                            branch '*-FTY-master'
+                            branch '*-FTY'
+                        }
+                    }
+                    steps {
+                        script {
+                            deploy.pushToOBS()
+                        }
                     }
                 }
             }
