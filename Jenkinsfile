@@ -87,6 +87,7 @@ pipeline {
                             branch 'FTY'
                             branch '*-FTY-master'
                             branch '*-FTY'
+                            branch 'test-push*'
                         }
                     }
                     steps {
