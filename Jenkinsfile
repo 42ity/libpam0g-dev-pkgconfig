@@ -1,4 +1,4 @@
-@Library('etn-ipm2-jenkins') _
+@Library('etn-ipm2-jenkins@push-to-mbt') _
 
 pipeline {
     agent {
@@ -91,7 +91,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            deploy.pushToOBS()
+                            deploy.push_to_obs_mbt()
                         }
                     }
                 }
