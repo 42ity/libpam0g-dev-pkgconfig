@@ -92,7 +92,8 @@ pipeline {
                     }
                     steps {
                         script {
-                            deploy.push_to_obs_mbt()
+                            deploy.create_packages(parameters)
+                            deploy.push_to_obs_mbt(parameters)
                         }
                     }
                 }
