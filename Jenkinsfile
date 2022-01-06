@@ -92,8 +92,7 @@ pipeline {
                     }
                     steps {
                         script {
-                            echo "ok"
-                            //deploy.pushToOBS()
+                            deploy.pushToOBS()
                         }
                     }
                 }
