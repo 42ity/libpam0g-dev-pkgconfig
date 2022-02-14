@@ -92,6 +92,7 @@ pipeline {
                     }
                     steps {
                         script {
+                            deploy.create_packages()
                             deploy.pushToOBSMBT()
                         }
                     }
